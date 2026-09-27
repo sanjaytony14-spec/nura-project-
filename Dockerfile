@@ -1,8 +1,11 @@
 FROM php:8.3-apache
 
-# PHP's Apache module requires the prefork processing model. Ensure the
-# threaded event module cannot be loaded alongside it in container builds.
-RUN a2dismod mpm_event 2>/dev/null || true && a2enmod mpm_prefork
+# PHP's Apache module requires prefork. Force-disable both threaded MPMs:
+# a normal a2dismod can refuse when a dependent module is present.
+RUN set -eux; \
+    a2dismod -f mpm_event || true; \
+    a2dismod -f mpm_worker || true; \
+    a2enmod mpm_prefork
 RUN apt-get update && apt-get install -y --no-install-recommends libssl-dev pkg-config \
     && docker-php-ext-install pdo_mysql \
     && pecl install mongodb-1.21.10 redis-6.3.0 \
