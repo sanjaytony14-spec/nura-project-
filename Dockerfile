@@ -14,4 +14,5 @@ COPY *.html ./
 
 # Railway supplies PORT at runtime. PHP serves the same static files and JSON
 # API endpoints without Apache, avoiding its conflicting MPM configuration.
+ENV PHP_CLI_SERVER_WORKERS=4
 CMD ["sh", "-c", "php -S 0.0.0.0:${PORT:-80} -t /var/www/html"]

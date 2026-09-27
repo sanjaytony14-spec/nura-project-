@@ -27,6 +27,23 @@ function env(string $key, string $default = ''): string {
     return $value === false ? $default : $value;
 }
 
+function appOrigin(): string {
+    $origin = env('APP_ORIGIN');
+    if ($origin !== '') return rtrim($origin, '/');
+    $domain = env('RAILWAY_PUBLIC_DOMAIN');
+    if ($domain !== '') return 'https://' . rtrim($domain, '/');
+    return 'http://localhost:8080';
+}
+
+function isSecureCookie(): bool {
+    $cs = env('COOKIE_SECURE');
+    if ($cs === '1') return true;
+    if ($cs === '0') return false;
+    return (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on')
+        || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')
+        || str_starts_with(appOrigin(), 'https://');
+}
+
 function method(string ...$allowed): string {
     $method = $_SERVER['REQUEST_METHOD'];
     if (!in_array($method, $allowed, true)) {
@@ -56,7 +73,25 @@ function field(array $data, string $key): string {
 function mysql(): PDO {
     static $db;
     if ($db instanceof PDO) return $db;
-    $db = new PDO('mysql:host=' . env('MYSQL_HOST', 'mysql') . ';dbname=' . env('MYSQL_DATABASE', 'nura') . ';charset=utf8mb4', env('MYSQL_USER'), env('MYSQL_PASSWORD'), [
+
+    $url = env('MYSQL_URL', env('MYSQL_PRIVATE_URL'));
+    if ($url !== '') {
+        $parts = parse_url($url);
+        $host = $parts['host'] ?? 'mysql';
+        $port = isset($parts['port']) ? ';port=' . $parts['port'] : '';
+        $user = isset($parts['user']) ? urldecode($parts['user']) : '';
+        $pass = isset($parts['pass']) ? urldecode($parts['pass']) : '';
+        $dbname = isset($parts['path']) ? ltrim($parts['path'], '/') : 'nura';
+    } else {
+        $host = env('MYSQL_HOST', env('MYSQLHOST', 'mysql'));
+        $port = env('MYSQL_PORT', env('MYSQLPORT', ''));
+        $port = $port !== '' ? ';port=' . $port : '';
+        $user = env('MYSQL_USER', env('MYSQLUSER', ''));
+        $pass = env('MYSQL_PASSWORD', env('MYSQLPASSWORD', ''));
+        $dbname = env('MYSQL_DATABASE', env('MYSQLDATABASE', 'nura'));
+    }
+
+    $db = new PDO("mysql:host={$host}{$port};dbname={$dbname};charset=utf8mb4", $user, $pass, [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_EMULATE_PREPARES => false,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
@@ -74,22 +109,58 @@ function mysql(): PDO {
     return $db;
 }
 
+function redisConfig(): array {
+    $url = env('REDIS_URL', env('REDIS_PRIVATE_URL'));
+    if ($url !== '') {
+        $parts = parse_url($url);
+        $host = $parts['host'] ?? 'redis';
+        $port = (int) ($parts['port'] ?? 6379);
+        $pass = isset($parts['pass']) ? urldecode($parts['pass']) : '';
+        $user = isset($parts['user']) ? urldecode($parts['user']) : '';
+        return ['host' => $host, 'port' => $port, 'pass' => $pass, 'user' => $user];
+    }
+    return [
+        'host' => env('REDIS_HOST', env('REDISHOST', 'redis')),
+        'port' => (int) env('REDIS_PORT', env('REDISPORT', '6379')),
+        'pass' => env('REDIS_PASSWORD', env('REDISPASSWORD', '')),
+        'user' => env('REDIS_USER', env('REDISUSER', '')),
+    ];
+}
+
 function redis(): Redis {
     static $db;
     if (!$db) {
+        $cfg = redisConfig();
         $db = new Redis();
-        $db->connect(env('REDIS_HOST', 'redis'), (int) env('REDIS_PORT', '6379'), 3);
-        if (env('REDIS_PASSWORD') !== '') $db->auth(env('REDIS_PASSWORD'));
+        $db->connect($cfg['host'], $cfg['port'], 3);
+        if ($cfg['pass'] !== '') {
+            if ($cfg['user'] !== '' && $cfg['user'] !== 'default') {
+                $db->auth([$cfg['user'], $cfg['pass']]);
+            } else {
+                $db->auth($cfg['pass']);
+            }
+        }
     }
     return $db;
 }
 
-function mongo(): MongoDB\Driver\Manager {
-    static $db;
-    return $db ??= new MongoDB\Driver\Manager(env('MONGO_URI'), ['serverSelectionTimeoutMS' => 3000]);
+function mongoUri(): string {
+    return env('MONGO_URI', env('MONGO_URL', env('MONGO_PRIVATE_URL', 'mongodb://mongo:27017')));
 }
 
-function profileNamespace(): string { return env('MONGO_DATABASE', 'nura') . '.profiles'; }
+function mongo(): MongoDB\Driver\Manager {
+    static $db;
+    return $db ??= new MongoDB\Driver\Manager(mongoUri(), ['serverSelectionTimeoutMS' => 3000]);
+}
+
+function profileNamespace(): string {
+    $db = env('MONGO_DATABASE', env('MONGODATABASE', ''));
+    if ($db === '') {
+        $path = parse_url(mongoUri(), PHP_URL_PATH);
+        $db = ($path && ltrim($path, '/') !== '') ? ltrim($path, '/') : 'nura';
+    }
+    return $db . '.profiles';
+}
 
 function rateLimit(string $scope, int $limit): void {
     // REMOTE_ADDR cannot be forged with an arbitrary X-Forwarded-For header.
@@ -102,19 +173,31 @@ function rateLimit(string $scope, int $limit): void {
 }
 
 function sessionStart(): void {
-    if (env('APP_ENV') === 'production' && (env('COOKIE_SECURE') !== '1' || !str_starts_with(env('APP_ORIGIN'), 'https://'))) {
-        throw new RuntimeException('Production requires HTTPS and secure cookies');
+    $cfg = redisConfig();
+    $authPart = '';
+    if ($cfg['pass'] !== '') {
+        $auth = ($cfg['user'] !== '' && $cfg['user'] !== 'default')
+            ? rawurlencode($cfg['user']) . ':' . rawurlencode($cfg['pass'])
+            : rawurlencode($cfg['pass']);
+        $authPart = '?auth=' . $auth . '&prefix=nura_session:';
+    } else {
+        $authPart = '?prefix=nura_session:';
     }
-    $host = env('REDIS_HOST', 'redis');
-    $port = env('REDIS_PORT', '6379');
+
     ini_set('session.save_handler', 'redis');
-    ini_set('session.save_path', 'tcp://' . $host . ':' . $port . '?auth=' . rawurlencode(env('REDIS_PASSWORD')) . '&prefix=nura_session:');
+    ini_set('session.save_path', 'tcp://' . $cfg['host'] . ':' . $cfg['port'] . $authPart);
     ini_set('session.gc_maxlifetime', '1800');
     ini_set('redis.session.locking_enabled', '1');
     ini_set('redis.session.lock_retries', '100');
     ini_set('redis.session.lock_wait_time', '20000');
     session_name('nura_session');
-    session_set_cookie_params(['lifetime' => 0, 'path' => '/', 'secure' => env('COOKIE_SECURE') === '1', 'httponly' => true, 'samesite' => 'Lax']);
+
+    $secure = isSecureCookie();
+    if (env('APP_ENV') === 'production' && (!$secure || !str_starts_with(appOrigin(), 'https://'))) {
+        throw new RuntimeException('Production requires HTTPS and secure cookies');
+    }
+
+    session_set_cookie_params(['lifetime' => 0, 'path' => '/', 'secure' => $secure, 'httponly' => true, 'samesite' => 'Lax']);
     if (!session_start()) throw new RuntimeException('Session storage unavailable');
     if ((isset($_SESSION['created']) && time() - $_SESSION['created'] >= 43200)
         || (isset($_SESSION['last_active']) && time() - $_SESSION['last_active'] >= 1800)) {
@@ -127,8 +210,15 @@ function sessionStart(): void {
 
 function csrf(): void {
     $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-    if ($origin !== '' && $origin !== env('APP_ORIGIN', 'http://localhost:8080')) respond(403, ['error' => 'Request origin is not allowed.']);
-    if (!hash_equals($_SESSION['csrf'], $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '')) respond(403, ['error' => 'Your session changed. Refresh the page and try again.']);
+    if ($origin !== '') {
+        $allowed = appOrigin();
+        if ($origin !== $allowed) {
+            respond(403, ['error' => 'Request origin is not allowed.']);
+        }
+    }
+    if (!hash_equals($_SESSION['csrf'] ?? '', $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '')) {
+        respond(403, ['error' => 'Your session changed. Refresh the page and try again.']);
+    }
 }
 
 function user(): array {
