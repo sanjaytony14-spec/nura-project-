@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Create your Nura Space account."><title>Create account — Nura Space</title>
+  <link rel="stylesheet" href="assets/css/bootstrap.min.css"><link rel="stylesheet" href="assets/css/style.css">
+  <script src="assets/js/jquery.min.js" defer></script><script src="assets/js/common.js" defer></script><script src="assets/js/register.js" defer></script>
+</head>
+<body><div class="page-wrap">
+  <header class="site-nav"><a class="brand" href="index.html" aria-label="Nura Space home">nura<span> / </span>space</a><span class="nav-note">Your next chapter starts here</span><a class="nav-link" href="login.html">Sign in ↗</a></header>
+  <main class="auth-layout">
+    <section class="intro"><div class="eyebrow">01 / A fresh beginning</div><h1>A little introduction.<br><em>Endless possibility.</em></h1><p>Every great story starts somewhere. Make this your space to share who you are and what you're curious about.</p><div class="step-list" aria-label="Your journey"><div class="step active"><span class="step-number">01</span>Create your account</div><div class="step"><span class="step-number">02</span>Sign in to your space</div><div class="step"><span class="step-number">03</span>Make your profile yours</div></div></section>
+    <section class="form-card" aria-labelledby="form-title"><div class="card-kicker">WELCOME TO NURA SPACE</div><h2 id="form-title">Let's get you started.</h2><p class="subtext">A few details, and you're on your way.</p>
+      <noscript><p class="alert alert-warning">Enable JavaScript to create your account.</p></noscript>
+      <form id="register-form" novalidate>
+        <label class="form-label" for="username">Username</label><input class="form-control" id="username" name="username" autocomplete="username" placeholder="e.g. curious_builder" required minlength="3" maxlength="32" pattern="[A-Za-z0-9_]{3,32}" aria-describedby="username-help"><div class="form-text" id="username-help">3–32 letters, numbers or underscores.</div>
+        <label class="form-label" for="email">Email address</label><input class="form-control" id="email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required maxlength="254">
+        <label class="form-label" for="password">Password</label><div class="password-wrap"><input class="form-control" id="password" type="password" autocomplete="new-password" required minlength="12" maxlength="72" aria-describedby="password-help"><button class="password-toggle" type="button" data-target="password" aria-controls="password" aria-pressed="false" aria-label="Show or hide password">Show</button></div><div class="form-text" id="password-help">Use a unique passphrase of at least 12 characters (up to 72 bytes).</div>
+        <label class="form-label" for="confirm-password">Confirm password</label><input class="form-control" id="confirm-password" type="password" autocomplete="new-password" required minlength="12" maxlength="72">
+        <div id="status" class="status" role="status" aria-live="polite" tabindex="-1"></div><button class="btn btn-primary submit-btn" type="submit" disabled>Create account <span aria-hidden="true">↗</span></button>
+      </form><p class="form-bottom">Already have an account? <a href="login.html">Sign in</a></p>
+    </section>
+  </main><footer class="footer"><span>© 2026 Nura Space · Independent assignment project</span><span>A space to be yourself.</span></footer>
+</div></body>
+</html>

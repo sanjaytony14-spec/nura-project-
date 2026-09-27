@@ -1,0 +1,74 @@
+services:
+  app:
+    build: .
+    ports:
+      - "127.0.0.1:8080:80"
+    environment:
+      APP_ENV: ${APP_ENV:-local}
+      APP_ORIGIN: ${APP_ORIGIN:-http://localhost:8080}
+      COOKIE_SECURE: ${COOKIE_SECURE:-0}
+      MYSQL_HOST: mysql
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-nura}
+      MYSQL_USER: ${MYSQL_USER:-nura}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
+      MONGO_URI: mongodb://${MONGO_USER:-nura}:${MONGO_PASSWORD:?Set MONGO_PASSWORD in .env}@mongo:27017/?authSource=nura
+      MONGO_DATABASE: nura
+      REDIS_HOST: redis
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-nura}
+      MYSQL_USER: ${MYSQL_USER:-nura}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/mysql.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 --silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+  mongo:
+    image: mongo:7.0
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?Set MONGO_ROOT_PASSWORD}
+      MONGO_USER: ${MONGO_USER:-nura}
+      MONGO_PASSWORD: ${MONGO_PASSWORD:?Set MONGO_PASSWORD}
+    volumes:
+      - mongo_data:/data/db
+      - ./database/mongo.js:/docker-entrypoint-initdb.d/001-profile.js:ro
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "const app = db.getSiblingDB('nura'); quit(app.auth(process.env.MONGO_USER, process.env.MONGO_PASSWORD).ok === 1 ? 0 : 1)"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+  redis:
+    image: redis:7.4-alpine
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD}
+    command: ["sh", "-c", "exec redis-server --appendonly yes --requirepass \"$$REDIS_PASSWORD\""]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "REDISCLI_AUTH=$$REDIS_PASSWORD redis-cli ping | grep -q PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+volumes:
+  mysql_data:
+  mongo_data:
+  redis_data:

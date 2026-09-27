@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Sign in to your Nura Space profile."><title>Sign in — Nura Space</title>
+  <link rel="stylesheet" href="assets/css/bootstrap.min.css"><link rel="stylesheet" href="assets/css/style.css">
+  <script src="assets/js/jquery.min.js" defer></script><script src="assets/js/common.js" defer></script><script src="assets/js/login.js" defer></script>
+</head>
+<body><div class="page-wrap">
+  <header class="site-nav"><a class="brand" href="index.html" aria-label="Nura Space home">nura<span> / </span>space</a><span class="nav-note">Good to have you here</span><a class="nav-link" href="register.html">Join the space ↗</a></header>
+  <main class="auth-layout">
+    <section class="intro"><div class="eyebrow">02 / Right where you belong</div><h1>Your space.<br><em>Ready when you are.</em></h1><p>Welcome back to your little corner of possibility. Pick up your story, right where you left it.</p><div class="welcome-art" aria-hidden="true"><span class="sun">✳</span><span>A new day.<br>A little more possibility.</span></div></section>
+    <section class="form-card" aria-labelledby="form-title"><div class="card-kicker">MAKE YOURSELF AT HOME</div><h2 id="form-title">Welcome back.</h2><p class="subtext">Sign in to see and update your profile.</p>
+      <noscript><p class="alert alert-warning">Enable JavaScript to sign in.</p></noscript>
+      <form id="login-form" novalidate>
+        <label class="form-label" for="identifier">Email or username</label><input class="form-control" id="identifier" name="identifier" autocomplete="username" placeholder="you@example.com" required maxlength="254">
+        <label class="form-label" for="password">Password</label><div class="password-wrap"><input class="form-control" id="password" type="password" autocomplete="current-password" required maxlength="72"><button class="password-toggle" type="button" data-target="password" aria-controls="password" aria-pressed="false" aria-label="Show or hide password">Show</button></div>
+        <div id="status" class="status" role="status" aria-live="polite" tabindex="-1"></div><button class="btn btn-primary submit-btn" type="submit" disabled>Sign in <span aria-hidden="true">↗</span></button>
+      </form><p class="form-bottom">New around here? <a href="register.html">Create an account</a></p><div class="private-note">Your profile is only visible when you sign in.</div>
+    </section>
+  </main><footer class="footer"><span>© 2026 Nura Space · Independent assignment project</span><span>A space to be yourself.</span></footer>
+</div></body>
+</html>

@@ -1,0 +1,31 @@
+services:
+  app:
+    environment:
+      APP_ENV: production
+      APP_ORIGIN: https://${DOMAIN:?Set DOMAIN to your public hostname}
+      COOKIE_SECURE: "1"
+  proxy:
+    image: caddy:2-alpine
+    environment:
+      DOMAIN: ${DOMAIN:?Set DOMAIN to your public hostname}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      default:
+        ipv4_address: 172.30.82.10
+    depends_on:
+      - app
+    restart: unless-stopped
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.30.82.0/24
+volumes:
+  caddy_data:
+  caddy_config:

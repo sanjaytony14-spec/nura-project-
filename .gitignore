@@ -1,0 +1,9 @@
+.env
+.env.*
+!.env.example
+vendor/
+tmp/
+.runtime/
+__pycache__/
+*.log
+.DS_Store

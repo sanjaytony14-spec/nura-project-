@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex">
+  <title>Your profile — Nura Space</title><link rel="stylesheet" href="assets/css/bootstrap.min.css"><link rel="stylesheet" href="assets/css/style.css">
+  <script src="assets/js/jquery.min.js" defer></script><script src="assets/js/common.js" defer></script><script src="assets/js/profile.js" defer></script>
+</head>
+<body><div class="page-wrap">
+  <header class="site-nav"><a class="brand" href="index.html" aria-label="Nura Space home">nura<span> / </span>space</a><span class="nav-note">A space that's yours</span><button id="logout" class="btn btn-sm btn-outline-success" type="button" disabled>Sign out ↗</button></header>
+  <main>
+    <div class="profile-header"><div class="eyebrow">03 / Make yourself at home</div><h1>Your story, so far.</h1><p class="subtext">A little about who you are. A little about what moves you.</p></div>
+    <p id="loading" role="status">Getting your space ready…</p><noscript><p class="alert alert-warning">Enable JavaScript to access your profile.</p></noscript>
+    <div id="status" class="status" role="status" aria-live="polite" tabindex="-1"></div>
+    <div id="profile-content" class="profile-grid" hidden>
+      <aside class="profile-summary" aria-label="Profile summary"><div id="avatar" class="avatar" aria-hidden="true"></div><h2 id="display-name"></h2><p id="display-bio" class="subtext profile-bio"></p><div class="account-detail"><small>USERNAME</small><span id="username"></span></div><div class="account-detail"><small>EMAIL</small><span id="email"></span></div><div class="account-detail"><small>HERE SINCE</small><span id="joined"></span></div><div class="badge-label">◎ Only visible to you</div></aside>
+      <section class="form-card" aria-labelledby="profile-title"><div class="card-kicker">THE PERSON BEHIND THE PROFILE</div><h2 id="profile-title">Make it yours.</h2><p class="subtext">Update your details whenever your story changes.</p>
+        <form id="profile-form" novalidate>
+          <div class="row g-3"><div class="col-sm-8"><label for="name" class="form-label">Your name</label><input id="name" class="form-control" autocomplete="name" placeholder="What should we call you?" required maxlength="100"></div><div class="col-sm-4"><label for="age" class="form-label">Age <span class="optional">(optional)</span></label><input id="age" class="form-control" type="number" min="1" max="120" step="1" placeholder="e.g. 22"></div></div>
+          <label for="bio" class="form-label">A little about you <span class="optional">(optional)</span></label><textarea id="bio" class="form-control" rows="4" maxlength="2000" placeholder="What are you building, learning, or dreaming about?" aria-describedby="bio-help"></textarea><div class="form-text" id="bio-help">Up to 2,000 bytes. A sentence or two is a great start.</div>
+          <label for="interests" class="form-label">Things you're into <span class="optional">(optional)</span></label><input id="interests" class="form-control" placeholder="Design, robotics, late-night ideas" maxlength="410" aria-describedby="interests-help"><div class="form-text" id="interests-help">Separate interests with commas. Up to 10, each at most 40 bytes.</div>
+          <div class="save-row"><span class="subtext">Your story can always change.</span><button class="btn btn-primary" type="submit">Save changes ↗</button></div>
+        </form>
+      </section>
+    </div>
+  </main><footer class="footer"><span>© 2026 Nura Space · Independent assignment project</span><span>Keep growing. Keep being you.</span></footer>
+</div></body>
+</html>
