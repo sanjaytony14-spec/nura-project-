@@ -50,7 +50,7 @@ services:
       - mongo_data:/data/db
       - ./database/mongo.js:/docker-entrypoint-initdb.d/001-profile.js:ro
     healthcheck:
-      test: ["CMD", "mongosh", "--quiet", "--eval", "const app = db.getSiblingDB('nura'); quit(app.auth(process.env.MONGO_USER, process.env.MONGO_PASSWORD).ok === 1 ? 0 : 1)"]
+      test: ["CMD", "mongosh", "--quiet", "--eval", "const app = db.getSiblingDB('nura'); const result = app.auth(process.env.MONGO_USER, process.env.MONGO_PASSWORD); quit(result === 1 || result.ok === 1 ? 0 : 1)"]
       interval: 10s
       timeout: 5s
       retries: 30

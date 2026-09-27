@@ -11,7 +11,7 @@ import secrets
 import urllib.error
 import urllib.request
 
-BASE = os.environ.get('TEST_BASE_URL', 'http://localhost:8080').rstrip('/')
+BASE = os.environ.get('TEST_BASE_URL', 'http://127.0.0.1:8080').rstrip('/')
 if not BASE.startswith(('http://localhost:', 'http://127.0.0.1:')):
     raise SystemExit('These tests are restricted to a local disposable instance.')
 
@@ -59,6 +59,17 @@ class Client:
 
 
 client = Client()
+for path in ['index.html', 'register.html', 'login.html', 'profile.html', 'assets/css/bootstrap.min.css', 'assets/js/jquery.min.js']:
+    response = client.http.open(BASE + '/' + path, timeout=20)
+    check(response.code == 200, 'Public asset is served: ' + path)
+    check("script-src 'self'" in response.headers.get('Content-Security-Policy', ''), 'Content security policy is present: ' + path)
+for path in ['.env', 'php/bootstrap.php', 'database/mysql.sql', 'deploy/php.ini']:
+    try:
+        response = client.http.open(BASE + '/' + path, timeout=20)
+        status = response.code
+    except urllib.error.HTTPError as error:
+        status = error.code
+    check(status in (403, 404), 'Nonpublic file cannot be downloaded: ' + path)
 headers = client.init()
 check('HttpOnly' in headers['Set-Cookie'] and 'SameSite=Lax' in headers['Set-Cookie'], 'Session cookie uses HttpOnly and SameSite')
 check('no-store' in headers['Cache-Control'], 'Private API responses cannot be cached')
@@ -67,6 +78,7 @@ check(client.request('profile.php', 'PUT', {'name': 'Anonymous'})[0] == 401, 'An
 check(client.request('register.php', 'GET')[0] == 405, 'Wrong HTTP method rejected')
 suffix = secrets.token_hex(5)
 username = 'test_' + suffix
+print('Creating test accounts:', username, username + '_b', flush=True)
 password = secrets.token_urlsafe(24)
 account = {'username': username, 'email': username + '@example.test', 'password': password}
 check(client.request('register.php', 'POST', account, {'X-CSRF-Token': ''})[0] == 403, 'Registration requires CSRF token')
@@ -115,9 +127,9 @@ check(client.request('profile.php')[1]['profile']['name'] == 'Test Builder', 'Ot
 check(client.request('login.php', 'DELETE', headers={'X-CSRF-Token': ''})[0] == 403, 'Logout requires CSRF token')
 logged_in_sid = client.sid()
 check(client.request('login.php', 'DELETE')[0] == 200, 'Logout succeeds')
+check(client.sid() == '', 'Logout removes browser session cookie')
 check(stale.request('profile.php', headers={'Cookie': 'nura_session=' + logged_in_sid})[0] == 401, 'Revoked session ID cannot be replayed after logout')
 check(client.request('profile.php')[0] == 401, 'Logout revokes profile access')
-check(client.sid() == '', 'Logout removes browser session cookie')
 other.request('login.php', 'DELETE')
 client.init()
 code, data, _ = client.request('login.php', 'POST', {'identifier': account['email'], 'password': password})

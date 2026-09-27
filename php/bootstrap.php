@@ -124,6 +124,9 @@ function user(): array {
     $stmt = mysql()->prepare('SELECT id, username, email, created_at FROM users WHERE id = ?');
     $stmt->execute([$_SESSION['user_id']]);
     $user = $stmt->fetch();
-    if (!$user) respond(401, ['error' => 'Please sign in to continue.']);
+    if (!$user) {
+        unset($_SESSION['user_id'], $_SESSION['created']);
+        respond(401, ['error' => 'Please sign in to continue.']);
+    }
     return $user;
 }
