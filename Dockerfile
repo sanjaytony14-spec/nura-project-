@@ -6,10 +6,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends libssl-dev pkg-
     && docker-php-ext-enable mongodb redis \
     && rm -rf /var/lib/apt/lists/*
 
-# Apache loads every module link in mods-enabled. Remove the incompatible
-# threaded MPM links explicitly so only PHP's prefork MPM can load.
 COPY deploy/php.ini /usr/local/etc/php/conf.d/security.ini
-RUN printf 'ServerTokens Prod\nServerSignature Off\n' > /etc/apache2/conf-enabled/server-security.conf
 WORKDIR /var/www/html
 COPY assets/ assets/
 COPY php/ php/
